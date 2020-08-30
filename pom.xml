@@ -9,9 +9,9 @@
 	<description>REST Backend for Rentier application</description>
 
 	<!--start internally-->
-	<!--<packaging>jar</packaging>-->
+	<packaging>jar</packaging>
 	<!--deploying to external server-->
-	<packaging>war</packaging>
+	<!--<packaging>war</packaging>-->
 
 
 	<parent>
@@ -47,11 +47,11 @@
 
 		<!-- switch on this dependency for WAR version on own Apache-->
 		<!--deploying to external server-->
-		<dependency>
+		<!--<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-tomcat</artifactId>
 			<scope>provided</scope>
-		</dependency>
+		</dependency>-->
 
 		<!--use MS SQL Server-->
 		<dependency>
@@ -111,10 +111,10 @@
 	<build>
 		<plugins>
 			<!-- switch off this plugin for WAR version on own Apache-->
-			<!--<plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>-->
+			</plugin>
 		</plugins>
 	</build>
 
