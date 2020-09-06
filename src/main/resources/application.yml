@@ -1,10 +1,20 @@
 # MS SQL Server version
+#spring:
+#  datasource:
+#    url: jdbc:sqlserver://LAPTOP-D0ANQNSC;databaseName=Rentier
+#    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+#    username: kjaniszewski
+#    password: Chrisjan123
+
+
+# Azure SQL version
 spring:
   datasource:
-    url: jdbc:sqlserver://LAPTOP-D0ANQNSC;databaseName=Rentier
+    url: jdbc:sqlserver://kjsql-rentier.database.windows.net:1433;database=rentier;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
-    username: kjaniszewski
+    username: kjaniszewski@kjsql-rentier
     password: Chrisjan123
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate.ddl-auto: update
