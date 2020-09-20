@@ -1,5 +1,7 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
+import com.kjaniszewski.rentierbackend.dto.BillDTO;
+import com.kjaniszewski.rentierbackend.dto.BillMapper;
 import com.kjaniszewski.rentierbackend.entity.Bill;
 import com.kjaniszewski.rentierbackend.repository.BillRepository;
 import lombok.AllArgsConstructor;
@@ -20,23 +22,28 @@ import java.util.Optional;
 @AllArgsConstructor
 public class BillRestController {
     private final BillRepository billRepo;
+    private final BillMapper billMapper;
 
-    // http://localhost:8080/bills
-    /*@GetMapping
-    public List<Bill> billFindAll() {
-        List<Bill> billList = billRepo.findAll();
-        return billList;
-    }*/
     //use the pagination by default
     @GetMapping
     public Page<Bill> FindAll(Pageable pageable) {
         return billRepo.findAll(pageable);
     }
 
-
     @GetMapping("/{billId}")
     public Bill FindByBillId(@PathVariable(name = "billId") Long billId) {
-        return billRepo.findById(billId).orElse(null);
+        return billRepo.findById(billId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Cannot find. Bill id: " + billId + " does not exist!"));
+    }
+
+    @GetMapping("/DTO/{billId}")
+    public BillDTO FindDTOByBillId(@PathVariable(name = "billId") Long billId) {
+        return billMapper.toBillDTO(billRepo.findById(billId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cannot find. Bill id: " + billId + " does not exist!")));
     }
 
     // http://localhost:8080/bills/filter/1
@@ -46,25 +53,37 @@ public class BillRestController {
         return billList;
     }
 
-    // http://localhost:8080/bills/filter/1/1
-    @GetMapping("/filter/{locationId}/{groupId}")
+    //not recommended, use @RequestParam instead
+    /*@GetMapping("/filter/{locationId}/{groupId}")
     public Page<Bill> findAllByLocationIdAndBillGroupId(@PathVariable(name = "locationId") Long locId,
                                                       @PathVariable(name = "groupId") Long groupId, Pageable pageable) {
         Page<Bill> billList = billRepo.findAllByLocationIdAndBillGroupIdOrderByDateAscBillGroupAsc(locId, groupId, pageable);
         return billList;
+    }*/
+
+    @GetMapping("/filterParam")
+    public Page<Bill> FilterAllByLocationIdAndBillGroupId(@RequestParam(name = "locationId", required = false, defaultValue = "0") Long locId,
+                                                            @RequestParam(name = "groupId", required = false, defaultValue = "0") Long groupId, Pageable pageable)
+                                                            throws Exception {
+        //value 0 for a param means we want 'any'
+        if ((locId == 0) && (groupId == 0))
+            return billRepo.findAll(pageable);
+        Page<Bill> billList = billRepo.findAllByLocationIdAndBillGroupIdOrderByDateAscBillGroupAsc(locId, groupId, pageable);
+        return billList;
     }
+
 
     //add a record
     @ResponseBody
     @PostMapping()
     public Bill InsertBill(@RequestBody @Valid Bill bill) {
-        Optional<Bill> bill1 = billRepo.findById((bill.getId()));
+        Optional<Bill> bill1 = billRepo.findById(bill.getId());
         if (bill1.isPresent()!=true) {
             return billRepo.save(bill);
         }
         else{
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot insert. Bill id " + bill.getId() + " already exists!", new Exception());
+                    HttpStatus.BAD_REQUEST, "Cannot insert. Bill id: " + bill.getId() + " already exists!");
         }
     }
 
@@ -72,13 +91,13 @@ public class BillRestController {
     @ResponseBody
     @PutMapping("/{billId}")
     public Bill UpdateBill(@PathVariable(name = "billId") Long billId, @RequestBody @Valid Bill bill){
-        Optional<Bill> bill1 = billRepo.findById((bill.getId()));
+        Optional<Bill> bill1 = billRepo.findById(/*bill.getId()*/billId);
         if (bill1.isPresent()==true) {
             return billRepo.save(bill);
         }
         else {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update. Bill id " + billId + " does not exist!", new Exception());
+                    HttpStatus.NOT_FOUND, "Cannot update. Bill id: " + billId + " does not exist!");
         }
     }
 
@@ -89,7 +108,7 @@ public class BillRestController {
             billRepo.deleteById(billId);
         } catch (EmptyResultDataAccessException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot delete. Bill id "+ billId +" does not exist!", ex);
+                    HttpStatus.NOT_FOUND, "Cannot delete. Bill id: "+ billId +" does not exist!", ex);
         }
     }
 

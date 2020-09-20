@@ -1,4 +1,4 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
 import com.kjaniszewski.rentierbackend.entity.Tenant;
 import com.kjaniszewski.rentierbackend.repository.TenantRepository;
@@ -22,34 +22,32 @@ public class TenantRestController {
 
     private final TenantRepository tenantRepo;
 
-    /*@GetMapping
-    public List<Tenant> FindAll() {
-        List<Tenant> tenantList = tenantRepo.findAll();
-        return tenantList;
-    }*/
     //use the pagination by default
     @GetMapping
     public Page<Tenant> FindAll(Pageable pageable) {
         return tenantRepo.findAll(pageable);
     }
 
-
     @GetMapping("/{tenantId}")
     public Tenant FindByTenantId(@PathVariable(name = "tenantId") Long tenId) {
-        return tenantRepo.findById(tenId).orElse(null);
+        return tenantRepo.findById(tenId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cannot find. Tenant id: " + tenId + " does not exist!"));
+
     }
 
     //add a record
     @ResponseBody
     @PostMapping("")
     public Tenant InsertTenant(@RequestBody @Valid Tenant tenant) {
-        Optional<Tenant> tenInsert = tenantRepo.findById((tenant.getId()));
+        Optional<Tenant> tenInsert = tenantRepo.findById(tenant.getId());
         if (tenInsert.isPresent()!=true) {
             return tenantRepo.save(tenant);
         }
         else{
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot insert. Tenant id " + tenant.getId() + " already exists!", new Exception());
+                    HttpStatus.BAD_REQUEST, "Cannot insert. Tenant id " + tenant.getId() + " already exists!");
         }
     }
 
@@ -63,7 +61,7 @@ public class TenantRestController {
         }
         else {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update. Tenant id " + tenantId + " does not exist!", new Exception());
+                    HttpStatus.NOT_FOUND, "Cannot update. Tenant id: " + tenantId + " does not exist!");
         }
     }
 
@@ -74,7 +72,7 @@ public class TenantRestController {
             tenantRepo.deleteById(tenantId);
         } catch (EmptyResultDataAccessException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot delete. Tenant id "+ tenantId +" does not exist!", ex);
+                    HttpStatus.NOT_FOUND, "Cannot delete. Tenant id: "+ tenantId +" does not exist!", ex);
         }
     }
 

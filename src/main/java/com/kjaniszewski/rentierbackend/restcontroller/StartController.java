@@ -1,9 +1,12 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+//To set the 'Access-Control-Allow-Origin' in the header
+@CrossOrigin
 @RestController
 @AllArgsConstructor
 public class StartController {

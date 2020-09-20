@@ -1,4 +1,4 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
 import com.kjaniszewski.rentierbackend.entity.Payment;
 import com.kjaniszewski.rentierbackend.repository.PaymentRepository;
@@ -22,11 +22,6 @@ public class PaymentRestController {
 
     private final PaymentRepository paymentRepo;
 
-    /*@GetMapping
-    public List<Payment> findAll() {
-        List<Payment> paymentList = paymentRepo.findAll();
-        return paymentList;
-    }*/
     //use the pagination by default
     @GetMapping
     public Page<Payment> FindAll(Pageable pageable) {
@@ -36,14 +31,29 @@ public class PaymentRestController {
 
     @GetMapping("/{paymentId}")
     public Payment FindByPaymentId(@PathVariable(name = "paymentId") Long paymentId) {
-        return paymentRepo.findById(paymentId).orElse(null);
+        return paymentRepo.findById(paymentId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cannot find. Payment id: " + paymentId + " does not exist!"));
+
     }
 
 
-    // http://localhost:8080/payments/filter/1/1
-    @GetMapping("/filter/{locationId}/{tenantId}")
+    //not recommended, use @RequestParam instead
+    /*@GetMapping("/filter/{locationId}/{tenantId}")
     public Page<Payment> findAllByLocationIdAndTenantId(@PathVariable(name = "locationId") Long locId,
                                                      @PathVariable(name = "tenantId") Long tenantId, Pageable pageable) {
+        Page<Payment> paymentList = paymentRepo.findAllByLocationIdAndTenantIdOrderByDateAsc(locId, tenantId, pageable);
+        return paymentList;
+    }*/
+
+    @GetMapping("/filterParam")
+    public Page<Payment> FilterAllByLocationIdAndTenantId(@RequestParam(name = "locationId", required = false, defaultValue = "0") Long locId,
+                                                          @RequestParam(name = "tenantId", required = false, defaultValue = "0") Long tenantId, Pageable pageable)
+                                                            throws Exception {
+        //value 0 for a param means we want 'any'
+        if ((locId == 0) && (tenantId == 0))
+            return paymentRepo.findAll(pageable);
         Page<Payment> paymentList = paymentRepo.findAllByLocationIdAndTenantIdOrderByDateAsc(locId, tenantId, pageable);
         return paymentList;
     }
@@ -52,13 +62,13 @@ public class PaymentRestController {
     @ResponseBody
     @PostMapping()
     public Payment InsertPayment(@RequestBody @Valid Payment payment) {
-        Optional<Payment> payment1 = paymentRepo.findById((payment.getId()));
+        Optional<Payment> payment1 = paymentRepo.findById(payment.getId());
         if (payment1.isPresent()!=true) {
             return paymentRepo.save(payment);
         }
         else{
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot insert. Payment id " + payment.getId() + " already exists!", new Exception());
+                    HttpStatus.BAD_REQUEST, "Cannot insert. Payment id: " + payment.getId() + " already exists!");
         }
     }
 
@@ -66,13 +76,13 @@ public class PaymentRestController {
     @ResponseBody
     @PutMapping("/{paymentId}")
     public Payment UpdatePayment(@PathVariable(name = "paymentId") Long paymentId, @RequestBody @Valid Payment payment){
-        Optional<Payment> pay1 = paymentRepo.findById((payment.getId()));
+        Optional<Payment> pay1 = paymentRepo.findById(/*payment.getId()*/paymentId);
         if (pay1.isPresent()==true) {
             return paymentRepo.save(payment);
         }
         else {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update. Payment id " + paymentId + " does not exist!", new Exception());
+                    HttpStatus.NOT_FOUND, "Cannot update. Payment id: " + paymentId + " does not exist!");
         }
     }
 
@@ -83,7 +93,7 @@ public class PaymentRestController {
             paymentRepo.deleteById(paymentId);
         } catch (EmptyResultDataAccessException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot delete. Payment id "+ paymentId +" does not exist!", ex);
+                    HttpStatus.NOT_FOUND, "Cannot delete. Payment id: "+ paymentId +" does not exist!", ex);
         }
 
     }

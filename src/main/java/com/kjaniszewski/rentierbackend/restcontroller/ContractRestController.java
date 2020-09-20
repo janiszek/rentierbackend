@@ -1,4 +1,4 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
 import com.kjaniszewski.rentierbackend.entity.Contract;
 import com.kjaniszewski.rentierbackend.repository.ContractRepository;
@@ -23,11 +23,6 @@ import java.util.Optional;
 public class ContractRestController {
     private final ContractRepository contractRepo;
 
-    /*@GetMapping
-    public List<Contract> FindAll() {
-        List<Contract> contractList = contractRepo.findAll();
-        return contractList;
-    }*/
     //use the pagination by default
     @GetMapping
     public Page<Contract> FindAll(Pageable pageable) {
@@ -36,7 +31,11 @@ public class ContractRestController {
 
     @GetMapping("/{contractId}")
     public Contract FindByTenantId(@PathVariable(name = "contractId") Long conId) {
-        return contractRepo.findById(conId).orElse(null);
+        return contractRepo.findById(conId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cannot find. Contract id: " + conId + " does not exist!"));
+
     }
 
     @GetMapping("/find-current/{locationId}")
@@ -50,22 +49,8 @@ public class ContractRestController {
             return null;
     }
 
+    //not recommended, use @RequestParam instead
     /*@GetMapping("/filter/{locationId}/{tenantId}")
-    public List<Contract> FindAllByLocationIdAndTenantId(@PathVariable(name = "locationId") Long locId,
-                                                        @PathVariable(name = "tenantId") Long tenantId) {
-        List<Contract> contractList;
-        if ((locId !=0) && (tenantId !=0)) {
-            contractList = contractRepo.findAllByLocationIdAndTenantIdOrderByDateToAsc(locId, tenantId);
-        }
-        else if (locId !=0){
-            contractList = contractRepo.findAllByLocationIdOrderByDateToAsc(locId);
-        } else {
-            contractList = contractRepo.findAllByTenantIdOrderByDateToAsc(tenantId);
-        }
-        return contractList;
-    }*/
-
-    @GetMapping("/filter/{locationId}/{tenantId}")
     public Page<Contract> FindAllByLocationIdAndTenantId(@PathVariable(name = "locationId") Long locId,
                                                         @PathVariable(name = "tenantId") Long tenantId, Pageable pageable) {
         Page<Contract> contractList;
@@ -78,19 +63,39 @@ public class ContractRestController {
             contractList = contractRepo.findAllByTenantIdOrderByDateToAsc(tenantId, pageable);
         }
         return contractList;
+    }*/
+
+    @GetMapping("/filterParam")
+    public Page<Contract> FilterAllByLocationIdAndTenantId(@RequestParam(name = "locationId", required = false, defaultValue = "0") Long locId,
+                                                         @RequestParam(name = "tenantId", required = false, defaultValue = "0") Long tenantId, Pageable pageable)
+                                                            throws Exception {
+        //value 0 for a param means we want 'any'
+        if ((locId == 0) && (tenantId == 0))
+            return contractRepo.findAll(pageable);
+        Page<Contract> contractList;
+        if ((locId !=0) && (tenantId !=0)) {
+            contractList = contractRepo.findAllByLocationIdAndTenantIdOrderByDateToAsc(locId, tenantId, pageable);
+        }
+        else if (locId !=0){
+            contractList = contractRepo.findAllByLocationIdOrderByDateToAsc(locId, pageable);
+        } else {
+            contractList = contractRepo.findAllByTenantIdOrderByDateToAsc(tenantId, pageable);
+        }
+        return contractList;
     }
+
 
     //add a record
     @ResponseBody
     @PostMapping()
     public Contract InsertContract(@RequestBody @Valid Contract contract) {
-        Optional<Contract> cont1 = contractRepo.findById((contract.getId()));
+        Optional<Contract> cont1 = contractRepo.findById(contract.getId());
         if (cont1.isPresent()!=true) {
             return contractRepo.save(contract);
         }
         else{
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot insert. Contract id " + contract.getId() + " already exists!", new Exception());
+                    HttpStatus.BAD_REQUEST, "Cannot insert. Contract id: " + contract.getId() + " already exists!");
         }
     }
 
@@ -98,13 +103,13 @@ public class ContractRestController {
     @ResponseBody
     @PutMapping("/{contractId}")
     public Contract UpdateContract(@PathVariable(name = "contractId") Long contractId, @RequestBody @Valid Contract contract){
-        Optional<Contract> loc1 = contractRepo.findById((contract.getId()));
+        Optional<Contract> loc1 = contractRepo.findById(/*contract.getId()*/contractId);
         if (loc1.isPresent()==true) {
             return contractRepo.save(contract);
         }
         else {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update. Contract id " + contractId + " does not exist!", new Exception());
+                    HttpStatus.NOT_FOUND, "Cannot update. Contract id: " + contractId + " does not exist!");
         }
     }
 
@@ -116,7 +121,7 @@ public class ContractRestController {
             contractRepo.deleteById(contractId);
         } catch (EmptyResultDataAccessException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot delete. Contract id "+ contractId +" does not exist!", ex);
+                    HttpStatus.NOT_FOUND, "Cannot delete. Contract id: "+ contractId +" does not exist!", ex);
         }
     }
 

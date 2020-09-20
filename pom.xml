@@ -33,12 +33,7 @@
       <groupId>org.springframework.boot</groupId>  
       <artifactId>spring-boot-starter-web</artifactId> 
     </dependency>  
-    <!-- add for Google Cloud support-->  
-    <!--<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-gcp-starter</artifactId>
-		</dependency>-->  
-    <!-- switch on this dependency for WAR version on own Apache-->  
+    <!-- switch on this dependency for WAR version on own Apache Tomcat-->
     <!--deploying to external server-->  
     <!--<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -82,29 +77,49 @@
           <artifactId>junit-vintage-engine</artifactId> 
         </exclusion> 
       </exclusions> 
-    </dependency> 
+    </dependency>
+    <!-- mapStruct to entity to DTO mapping -->
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>1.3.1.Final</version>
+    </dependency>
   </dependencies>  
-  <!-- for Google Cloud jar version-->  
-  <!--<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>-->  
-  <build> 
+  <build>
     <plugins> 
-      <!-- switch off this plugin for WAR version on own Apache-->  
+      <!-- switch off this plugin for WAR version on own Apache Tomcat-->
       <plugin> 
         <groupId>org.springframework.boot</groupId>  
         <artifactId>spring-boot-maven-plugin</artifactId> 
-      </plugin>  
+      </plugin>
+      <!-- mapStruct plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.12</version>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>1.3.1.Final</version>
+            </path>
+          </annotationProcessorPaths>
+          <compilerArgs>
+            <arg>-Amapstruct.suppressGeneratorTimestamp=true</arg>
+            <arg>-Amapstruct.defaultComponentModel=spring</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
       <!-- switch on for Azure cloud deployment -->  
-      <plugin> 
+      <!--<plugin>
         <groupId>com.microsoft.azure</groupId>  
         <artifactId>azure-webapp-maven-plugin</artifactId>  
         <version>1.9.1</version>  
@@ -119,14 +134,12 @@
             <javaVersion>jre8</javaVersion>
             <webContainer>jre8</webContainer>
           </runtime>
-          <!-- Begin of App Settings  -->
           <appSettings>
             <property>
               <name>JAVA_OPTS</name>
               <value>-Dserver.port=80</value>
             </property>
           </appSettings>
-          <!-- End of App Settings  -->
           <deployment>
             <resources>
               <resource>
@@ -138,7 +151,7 @@
             </resources>
           </deployment>
         </configuration>
-      </plugin> 
+      </plugin>-->
     </plugins> 
   </build> 
 </project>

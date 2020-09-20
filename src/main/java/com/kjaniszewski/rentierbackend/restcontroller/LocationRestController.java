@@ -1,4 +1,4 @@
-package com.kjaniszewski.rentierbackend.RestController;
+package com.kjaniszewski.rentierbackend.restcontroller;
 
 import com.kjaniszewski.rentierbackend.entity.Location;
 import com.kjaniszewski.rentierbackend.repository.LocationRepository;
@@ -21,12 +21,6 @@ import java.util.Optional;
 public class LocationRestController {
     private final LocationRepository locationRepo;
 
-    /*@GetMapping
-    public List<Location> FindAll() {
-        List<Location> locationList = locationRepo.findAll();
-        return locationList;
-    }*/
-
     //use the pagination by default
     @GetMapping
     public Page<Location> FindAll(Pageable pageable) {
@@ -36,20 +30,24 @@ public class LocationRestController {
 
     @GetMapping("/{locationId}")
     public Location FindByLocationId(@PathVariable(name = "locationId") Long locId) {
-        return locationRepo.findById(locId).orElse(null);
+        return locationRepo.findById(locId)
+                //.orElse(null);
+                .orElseThrow(() ->new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cannot find. Location id: " + locId + " does not exist!"));
+
     }
 
     //add a record
     @ResponseBody
     @PostMapping()
     public Location InsertLocation(@RequestBody @Valid Location location) {
-        Optional<Location> loc1 = locationRepo.findById((location.getId()));
+        Optional<Location> loc1 = locationRepo.findById(location.getId());
         if (loc1.isPresent()!=true) {
             return locationRepo.save(location);
         }
         else{
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot insert. Location id " + location.getId() + " already exists!", new Exception());
+                    HttpStatus.BAD_REQUEST, "Cannot insert. Location id: " + location.getId() + " already exists!");
         }
     }
 
@@ -57,13 +55,13 @@ public class LocationRestController {
     @ResponseBody
     @PutMapping("/{locId}")
     public Location UpdateLocation(@PathVariable(name = "locId") Long locId, @RequestBody @Valid Location location){
-        Optional<Location> loc1 = locationRepo.findById((location.getId()));
+        Optional<Location> loc1 = locationRepo.findById(/*location.getId()*/locId);
         if (loc1.isPresent()==true) {
             return locationRepo.save(location);
         }
         else {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update. Location id " + locId + " does not exist!", new Exception());
+                    HttpStatus.NOT_FOUND, "Cannot update. Location id: " + locId + " does not exist!");
         }
     }
 
@@ -74,7 +72,7 @@ public class LocationRestController {
             locationRepo.deleteById(locId);
         } catch (EmptyResultDataAccessException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot delete. Location id "+ locId +" does not exist!", ex);
+                    HttpStatus.NOT_FOUND, "Cannot delete. Location id: "+ locId +" does not exist!", ex);
         }
     }
 
